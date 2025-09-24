@@ -1,0 +1,6 @@
+employee_id,name,role,order_accuracy_percent,avg_speed_seconds,customer_feedback_score,skills_unlocked
+101,Alex,Barista,98,42,4.8,Espresso Calibration
+102,Maria,Barista,97,40,4.5,Latte Art
+103,David,Shift Lead,99,39,4.2,Espresso Calibration;Latte Art;Inventory Basics
+104,Chloe,Shift Lead,100,38,4.9,Inventory Basics;Cash Handling Reconciliation
+105,Ben,Barista,85,60,3.5,

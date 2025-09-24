@@ -1,0 +1,14 @@
+{
+  "Barista": {
+    "next_role": "Shift Lead",
+    "skills_required": ["Espresso Calibration", "Latte Art", "Customer De-escalation"]
+  },
+  "Shift Lead": {
+    "next_role": "Assistant Manager",
+    "skills_required": ["Inventory Basics", "Cash Handling Reconciliation", "Team Communication"]
+  },
+  "Assistant Manager": {
+    "next_role": "Store Manager",
+    "skills_required": ["Team Leadership", "Budgeting Basics", "Staff Scheduling"]
+  }
+}
