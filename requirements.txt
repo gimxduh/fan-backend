@@ -4,3 +4,4 @@ chromadb
 pdfplumber
 openai
 pandas
+python-multipart
