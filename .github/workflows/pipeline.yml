@@ -26,10 +26,13 @@ jobs:
 
       - name: Run tests
         run: |
-          pip install pytest
-          pytest tests/ -v
+          if (Test-Path tests/) {
+            pip install pytest
+            pytest tests/ -v
+          } else {
+            Write-Host "No tests directory found, skipping..."
+          }
         shell: powershell
-        continue-on-error: true
 
       - name: Package application
         run: |
