@@ -21,30 +21,28 @@ jobs:
 
       - name: Install dependencies from Nexus
         run: |
-          pip install -r requirements.txt \
-            --index-url http://${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}@172.23.11.110:8081/repository/pypi-proxy/simple/ \
-            --trusted-host 172.23.11.110
+          pip install -r requirements.txt --index-url http://${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}@172.23.11.110:8081/repository/pypi-proxy/simple/ --trusted-host 172.23.11.110
+        shell: powershell
 
       - name: Run tests
         run: |
           pip install pytest
           pytest tests/ -v
+        shell: powershell
         continue-on-error: true
 
       - name: Package application
         run: |
-          zip -r fan-backend-${{ github.sha }}.zip . \
-            --exclude=".git/*" \
-            --exclude="*.pyc" \
-            --exclude="__pycache__/*"
+          Compress-Archive -Path * -DestinationPath fan-backend-${{ github.sha }}.zip -Force
+        shell: powershell
 
       - name: Push to Nexus
         run: |
-          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-            --upload-file fan-backend-${{ github.sha }}.zip \
-            http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip
+          curl.exe -u "${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}" --upload-file fan-backend-${{ github.sha }}.zip http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip
+        shell: powershell
 
       - name: Print artifact URL
         run: |
-          echo "✅ Artifact pushed to Nexus:"
-          echo "http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip"
+          Write-Host "✅ Artifact pushed to Nexus:"
+          Write-Host "http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip"
+        shell: powershell
