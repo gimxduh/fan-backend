@@ -1,0 +1,50 @@
+name: Fan Backend Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies from Nexus
+        run: |
+          pip install -r requirements.txt \
+            --index-url http://${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}@172.23.11.110:8081/repository/pypi-proxy/simple/ \
+            --trusted-host 172.23.11.110
+
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest tests/ -v
+        continue-on-error: true
+
+      - name: Package application
+        run: |
+          zip -r fan-backend-${{ github.sha }}.zip . \
+            --exclude=".git/*" \
+            --exclude="*.pyc" \
+            --exclude="__pycache__/*"
+
+      - name: Push to Nexus
+        run: |
+          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+            --upload-file fan-backend-${{ github.sha }}.zip \
+            http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip
+
+      - name: Print artifact URL
+        run: |
+          echo "✅ Artifact pushed to Nexus:"
+          echo "http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip"
