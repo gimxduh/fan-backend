@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies from Nexus
         run: |
-          pip install -r requirements.txt --index-url http://${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}@172.23.11.110:8081/repository/pypi-proxy/simple/ --trusted-host 172.23.11.110
+          pip install -r requirements.txt --index-url http://${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}@172.23.11.110:8081/repository/pypi-proxy/simple/ --trusted-host 172.23.11.110 --timeout 120
         shell: powershell
 
       - name: Run tests
