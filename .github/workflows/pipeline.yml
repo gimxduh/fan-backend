@@ -49,3 +49,4 @@ jobs:
           Write-Host "✅ Artifact pushed to Nexus:"
           Write-Host "http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip"
         shell: powershell
+# trigger
