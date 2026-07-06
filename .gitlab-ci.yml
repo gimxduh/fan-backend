@@ -7,13 +7,18 @@ variables:
   NEXUS_URL: "http://172.23.11.110:8081"
   APP_NAME: "fan-backend"
 
+default:
+  image: python:3.11-slim    # ใช้ Python Docker image
+
 build:
   stage: build
+  before_script:
+    - apt-get update && apt-get install -y default-jre curl zip
   script:
     - pip install -r requirements.txt
-      --index-url http://$nexus_user:$nexus_pass@172.23.11.110:8081/repository/pypi-proxy/simple/
-      --trusted-host 172.23.11.110
-      --timeout 120
+        --index-url http://$nexus_user:$nexus_pass@172.23.11.110:8081/repository/pypi-proxy/simple/
+        --trusted-host 172.23.11.110
+        --timeout 120
     - pip download -r requirements.txt -d ./packages --timeout 120
   artifacts:
     paths:
@@ -22,29 +27,33 @@ build:
 
 iq-scan:
   stage: scan
+  before_script:
+    - apt-get update && apt-get install -y default-jre curl
   script:
     - curl -u $nexus_user:$nexus_pass
-      --output nexus-iq-cli.jar
-      http://172.23.11.110:8081/repository/raw-hosted/tools/nexus-iq-cli.jar
+        --output nexus-iq-cli.jar
+        http://172.23.11.110:8081/repository/raw-hosted/tools/nexus-iq-cli.jar
     - java -jar nexus-iq-cli.jar
-      -s $iq_url
-      -a $iq_user:$iq_pass
-      -i $iq_app_id
-      -t build
-      ./packages
+        -s $iq_url
+        -a $iq_user:$iq_pass
+        -i $iq_app_id
+        -t build
+        ./packages
   dependencies:
     - build
 
 push-to-nexus:
   stage: push
+  before_script:
+    - apt-get update && apt-get install -y curl zip
   script:
     - zip -r $APP_NAME-$CI_COMMIT_SHA.zip .
-      --exclude=".git/*"
-      --exclude="*.pyc"
-      --exclude="packages/*"
+        --exclude=".git/*"
+        --exclude="*.pyc"
+        --exclude="packages/*"
     - curl -u $nexus_user:$nexus_pass
-      --upload-file $APP_NAME-$CI_COMMIT_SHA.zip
-      $NEXUS_URL/repository/raw-hosted/$APP_NAME/$APP_NAME-$CI_COMMIT_SHA.zip
+        --upload-file $APP_NAME-$CI_COMMIT_SHA.zip
+        $NEXUS_URL/repository/raw-hosted/$APP_NAME/$APP_NAME-$CI_COMMIT_SHA.zip
     - echo "Artifact $NEXUS_URL/repository/raw-hosted/$APP_NAME/$APP_NAME-$CI_COMMIT_SHA.zip"
   only:
     - main
