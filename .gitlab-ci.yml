@@ -9,6 +9,8 @@ variables:
 
 build:
   stage: build
+  tags:
+    - window
   script:
     - pip install -r requirements.txt --index-url http://$nexus_user:$nexus_pass@172.23.11.110:8081/repository/pypi-proxy/simple/ --trusted-host 172.23.11.110 --timeout 120
     - pip download -r requirements.txt -d ./packages --timeout 120
@@ -19,6 +21,8 @@ build:
 
 iq-scan:
   stage: scan
+  tags:
+    - window
   script:
     - curl -u ${nexus_user}:${nexus_pass} --output nexus-iq-cli.jar http://172.23.11.110:8081/repository/raw-hosted/tools/nexus-iq-cli.jar
     - java -jar nexus-iq-cli.jar -s $iq_url -a ${iq_user}:${iq_pass} -i $iq_app_id -t build ./packages
@@ -27,6 +31,8 @@ iq-scan:
 
 push-to-nexus:
   stage: push
+  tags:
+    - window
   script:
     - Compress-Archive -Path * -DestinationPath ${APP_NAME}-${CI_COMMIT_SHA}.zip -Force
     - curl -u ${nexus_user}:${nexus_pass} --upload-file ${APP_NAME}-${CI_COMMIT_SHA}.zip ${NEXUS_URL}/repository/raw-hosted/${APP_NAME}/${APP_NAME}-${CI_COMMIT_SHA}.zip
