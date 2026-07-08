@@ -34,6 +34,21 @@ jobs:
           }
         shell: powershell
 
+      - name: Download IQ CLI from Nexus
+        run: |
+          curl.exe -u "${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}" -o nexus-iq-cli.jar http://172.23.11.110:8081/repository/raw-hosted/tools/nexus-iq-cli.jar
+        shell: powershell
+
+      - name: Download packages for IQ scan
+        run: |
+          pip download -r requirements.txt -d ./packages --timeout 120
+        shell: powershell
+
+      - name: IQ Server scan
+        run: |
+          java -jar nexus-iq-cli.jar -s http://172.23.11.33:8070 -a ${{ secrets.IQ_USER }}:${{ secrets.IQ_PASS }} -i fan-backend -t build ./packages
+        shell: powershell
+
       - name: Package application
         run: |
           Compress-Archive -Path * -DestinationPath fan-backend-${{ github.sha }}.zip -Force
@@ -49,4 +64,3 @@ jobs:
           Write-Host "✅ Artifact pushed to Nexus:"
           Write-Host "http://172.23.11.110:8081/repository/raw-hosted/fan-backend/fan-backend-${{ github.sha }}.zip"
         shell: powershell
-# trigger
