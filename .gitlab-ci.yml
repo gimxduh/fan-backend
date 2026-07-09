@@ -1,42 +1,67 @@
 stages:
-  - build
+  - install
+  - test
   - scan
-  - push
+  - package
+  - publish
 
 variables:
-  NEXUS_URL: "http://172.23.11.110:8081"
-  APP_NAME: "fan-backend"
+  NEXUS_URL: "172.23.11.110:8081"
+  IQ_SERVER_URL: "http://172.23.11.33:8070"
+  IQ_APP_ID: "fan-backend"
 
-build:
-  stage: build
+default:
   tags:
     - window
+  before_script:
+    - $env:Path += ";C:\Users\Jiratip\AppData\Local\Microsoft\WindowsApps"
+    - python --version
+    - pip --version
+
+install_dependencies:
+  stage: install
   script:
-    - pip install -r requirements.txt --index-url http://$nexus_user:$nexus_pass@172.23.11.110:8081/repository/pypi-proxy/simple/ --trusted-host 172.23.11.110 --timeout 120
+    - pip install -r requirements.txt --index-url "http://${NEXUS_USER}:${NEXUS_PASS}@${NEXUS_URL}/repository/pypi-proxy/simple/" --trusted-host "172.23.11.110" --timeout 120
+
+run_tests:
+  stage: test
+  script:
+    - |
+      if (Test-Path tests/) {
+        pip install pytest
+        pytest tests/ -v
+      } else {
+        Write-Host "No tests directory found, skipping..."
+      }
+
+iq_server_scan:
+  stage: scan
+  script:
+    - curl.exe -u "${NEXUS_USER}:${NEXUS_PASS}" -o nexus-iq-cli.jar "http://${NEXUS_URL}/repository/raw-hosted/tools/nexus-iq-cli.jar"
     - pip download -r requirements.txt -d ./packages --timeout 120
+    - java -jar nexus-iq-cli.jar -s $IQ_SERVER_URL -a "${IQ_USER}:${IQ_PASS}" -i $IQ_APP_ID -t build ./packages
   artifacts:
     paths:
       - packages/
     expire_in: 1 hour
 
-iq-scan:
-  stage: scan
-  tags:
-    - window
+package_application:
+  stage: package
   script:
-    - curl -u ${nexus_user}:${nexus_pass} --output nexus-iq-cli.jar http://172.23.11.110:8081/repository/raw-hosted/tools/nexus-iq-cli.jar
-    - java -jar nexus-iq-cli.jar -s $iq_url -a ${iq_user}:${iq_pass} -i $iq_app_id -t build ./packages
-  dependencies:
-    - build
+    - Compress-Archive -Path * -DestinationPath "fan-backend-$CI_COMMIT_SHA.zip" -Force
+  artifacts:
+    paths:
+      - "fan-backend-*.zip"
+    expire_in: 1 week
 
-push-to-nexus:
-  stage: push
-  tags:
-    - window
+push_to_nexus:
+  stage: publish
   script:
-    - Compress-Archive -Path * -DestinationPath ${APP_NAME}-${CI_COMMIT_SHA}.zip -Force
-    - curl -u ${nexus_user}:${nexus_pass} --upload-file ${APP_NAME}-${CI_COMMIT_SHA}.zip ${NEXUS_URL}/repository/raw-hosted/${APP_NAME}/${APP_NAME}-${CI_COMMIT_SHA}.zip
-  only:
-    - main
-  dependencies:
-    - build
+    - curl.exe -u "${NEXUS_USER}:${NEXUS_PASS}" --upload-file "fan-backend-$CI_COMMIT_SHA.zip" "http://${NEXUS_URL}/repository/raw-hosted/fan-backend/fan-backend-$CI_COMMIT_SHA.zip"
+    - Write-Host "✅ Artifact pushed to Nexus:"
+    - Write-Host "http://${NEXUS_URL}/repository/raw-hosted/fan-backend/fan-backend-$CI_COMMIT_SHA.zip"
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
